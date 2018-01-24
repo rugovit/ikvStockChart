@@ -39,7 +39,11 @@ import com.wordplat.ikvstockchart.entry.EntrySet;
 import com.wordplat.ikvstockchart.entry.StockDataTest;
 import com.wordplat.ikvstockchart.compat.GestureMoveActionCompat;
 import com.wordplat.ikvstockchart.render.AbstractRender;
+import com.wordplat.ikvstockchart.render.IndependedRender;
 import com.wordplat.ikvstockchart.render.KLineRender;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * <p>交互式 K 线图</p>
@@ -83,6 +87,7 @@ public class InteractiveKLineView extends View {
     private boolean onDragging = false;
     private boolean enableLeftRefresh = true;
     private boolean enableRightRefresh = true;
+    private List<IndependedRender> independedRender = new ArrayList<>();
 
     public InteractiveKLineView(Context context) {
         this(context, null);
@@ -115,8 +120,14 @@ public class InteractiveKLineView extends View {
         scroller = ScrollerCompat.create(context, interpolator);
 
         render.setSizeColor(ViewUtils.getSizeColor(context, attrs, defStyleAttr));
-    }
+        for (AbstractRender tempRender : independedRender) {
+            tempRender.setSizeColor(ViewUtils.getSizeColor(context, attrs, defStyleAttr));
+        }
 
+    }
+    public void addIndependedRender(IndependedRender independedRender){
+        this.independedRender.add(independedRender);
+    }
     public void setEntrySet(EntrySet set) {
         entrySet = set;
     }
@@ -129,7 +140,11 @@ public class InteractiveKLineView extends View {
         render.setViewRect(viewRect);
         render.onViewRect(viewRect);
         render.setEntrySet(entrySet);
-
+        for (AbstractRender tempRender : independedRender) {
+            tempRender.setViewRect(viewRect);
+            tempRender.onViewRect(viewRect);
+            tempRender.setEntrySet(entrySet);
+        }
         if (invalidate) {
             invalidate();
         }
@@ -137,11 +152,18 @@ public class InteractiveKLineView extends View {
 
     public void setRender(AbstractRender render) {
         render.setSizeColor(this.render.getSizeColor());
+        for (AbstractRender tempRender : independedRender) {
+            tempRender.setSizeColor(tempRender.getSizeColor());
+        }
         this.render = render;
     }
 
     public AbstractRender getRender() {
         return render;
+    }
+
+    public List<IndependedRender> getIndependedRender() {
+        return independedRender;
     }
 
     public void setKLineHandler(KLineHandler kLineHandler) {
@@ -225,9 +247,16 @@ public class InteractiveKLineView extends View {
 
             if (f < 1.0f) {
                 render.zoomOut(detector.getFocusX(), detector.getFocusY());
+                for (AbstractRender tempRender : independedRender) {
+                    tempRender.zoomOut(detector.getFocusX(), detector.getFocusY());
+                }
             } else if (f > 1.0f) {
                 render.zoomIn(detector.getFocusX(), detector.getFocusY());
+                for (AbstractRender tempRender : independedRender) {
+                    tempRender.zoomIn(detector.getFocusX(), detector.getFocusY());
+                }
             }
+
         }
     });
 
@@ -235,6 +264,9 @@ public class InteractiveKLineView extends View {
 
     private void highlight(float x, float y) {
         render.onHighlight(x, y);
+        for (AbstractRender tempRender : independedRender) {
+            tempRender.onHighlight(x, y);
+        }
         invalidate();
 
         int highlightIndex = render.getEntrySet().getHighlightIndex();
@@ -250,6 +282,9 @@ public class InteractiveKLineView extends View {
 
     private void cancelHighlight() {
         render.onCancelHighlight();
+        for (AbstractRender tempRender : independedRender) {
+            tempRender.onCancelHighlight();
+        }
         invalidate();
 
         if (kLineHandler != null) {
@@ -265,6 +300,9 @@ public class InteractiveKLineView extends View {
      */
     public void scroll(float dx) {
         render.scroll(dx);
+        for (AbstractRender tempRender : independedRender) {
+            tempRender.scroll(dx);
+        }
         invalidate();
     }
 
@@ -279,6 +317,13 @@ public class InteractiveKLineView extends View {
             render.updateOverScrollOffset(dx);
             invalidate();
         }
+        for (AbstractRender tempRender : independedRender) {
+            if (tempRender.getMaxScrollOffset() < 0 || dx < 0) {
+                tempRender.updateCurrentTransX(dx);
+                tempRender.updateOverScrollOffset(dx);
+                invalidate();
+            }
+        }
     }
 
     /**
@@ -289,6 +334,10 @@ public class InteractiveKLineView extends View {
     private void releaseBack(float dx) {
         render.updateCurrentTransX(dx);
         render.updateOverScrollOffset(dx);
+        for (AbstractRender tempRender : independedRender) {
+            tempRender.updateCurrentTransX(dx);
+            tempRender.updateOverScrollOffset(dx);
+        }
         invalidate();
     }
 
@@ -332,7 +381,7 @@ public class InteractiveKLineView extends View {
     @Override
     public void computeScroll() {
         if (onVerticalMove) {
-            return ;
+            return;
         }
 
         if (scroller.computeScrollOffset()) {
@@ -522,5 +571,8 @@ public class InteractiveKLineView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         render.render(canvas);
+        for (AbstractRender tempRender : independedRender) {
+            tempRender.render(canvas);
+        }
     }
 }

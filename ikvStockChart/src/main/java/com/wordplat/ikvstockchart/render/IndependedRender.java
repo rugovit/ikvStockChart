@@ -1,21 +1,3 @@
-/*
- * Copyright (C) 2017 WordPlat Open Source Project
- *
- *      https://wordplat.com/InteractiveKLineView/
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.wordplat.ikvstockchart.render;
 
 import android.animation.ValueAnimator;
@@ -40,14 +22,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * <p>KLineRender K线图</p>
- * <p>Date: 2017/3/3</p>
- *
- * @author afon
+ * Created by rugovit on 1/24/2018.
  */
 
-public class KLineRender extends AbstractRender {
-    private static final String TAG = "KLineRender";
+public class IndependedRender extends AbstractRender {
+    private static final String TAG = "IndependedRender";
 
     private static final float ZOOM_IN_FACTOR = 1.4f;
     private static final float ZOOM_OUT_FACTOR = 0.7f;
@@ -108,20 +87,16 @@ public class KLineRender extends AbstractRender {
     private final KLineGridAxisDrawing kLineGridAxisDrawing = new KLineGridAxisDrawing();
     private final CandleDrawing candleDrawing = new CandleDrawing();
     private final MADrawing maDrawing = new MADrawing();
+    private final IndependentLineDrawing independentLineDrawing = new IndependentLineDrawing();
     private final EmptyDataDrawing emptyDataDrawing = new EmptyDataDrawing();
     private final HighlightDrawing highlightDrawing = new HighlightDrawing();
 
     private final List<StockIndex> stockIndexList = new ArrayList<>(); // 股票指标列表
 
-    public KLineRender(Context context) {
+    public IndependedRender(Context context,EntrySet entrySet) {
         this.context = context;
-
-        kLineDrawingList.add(kLineGridAxisDrawing);
-        kLineDrawingList.add(candleDrawing);
-        kLineDrawingList.add(maDrawing);
-        kLineDrawingList.add(emptyDataDrawing);
-        kLineDrawingList.add(highlightDrawing);
-
+        this.entrySet=entrySet;
+        kLineDrawingList.add(independentLineDrawing);
         zoomAnimator.setDuration(ZOOM_DURATION);
         zoomAnimator.setInterpolator(new LinearInterpolator());
         zoomAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
@@ -137,6 +112,7 @@ public class KLineRender extends AbstractRender {
     public void addDrawing(IDrawing drawing) {
         kLineDrawingList.add(drawing);
     }
+
     public void clearDrawing() {
         kLineDrawingList.clear();
     }
@@ -170,7 +146,7 @@ public class KLineRender extends AbstractRender {
     }
 
     @Override
-    public void setEntrySet(EntrySet entrySet) {
+    public void setEntrySet(EntrySet et) {
         super.setEntrySet(entrySet);
 
         computeVisibleCount();
@@ -230,7 +206,7 @@ public class KLineRender extends AbstractRender {
     @Override
     public void zoomIn(float x, float y) {
         if (entrySet.getEntryList().size() == 0) {
-            return ;
+            return;
         }
         final int visibleCount = getCurrentVisibleCount(++zoomTimes);
 
@@ -252,7 +228,7 @@ public class KLineRender extends AbstractRender {
     @Override
     public void zoomOut(float x, float y) {
         if (entrySet.getEntryList().size() == 0) {
-            return ;
+            return;
         }
         final int visibleCount = getCurrentVisibleCount(--zoomTimes);
 
@@ -287,12 +263,12 @@ public class KLineRender extends AbstractRender {
                             stockIndex.getExtremumYDelta());
                     postMatrixValue(stockIndex.getMatrix(), stockIndex.getRect(), extremumY[0], extremumY[1]);
 
-                    renderDrawingList(canvas, stockIndex.getDrawingList(), stockIndex.getMinY(), stockIndex.getMaxY());
+                   // renderDrawingList(canvas, stockIndex.getDrawingList(), stockIndex.getMinY(), stockIndex.getMaxY());
 
                 } else {
                     postMatrixValue(stockIndex.getMatrix(), stockIndex.getRect(), Float.NaN, Float.NaN);
 
-                    renderDrawingList(canvas, stockIndex.getDrawingList(), Float.NaN, Float.NaN);
+                  //  renderDrawingList(canvas, stockIndex.getDrawingList(), Float.NaN, Float.NaN);
                 }
             }
         }
@@ -315,7 +291,7 @@ public class KLineRender extends AbstractRender {
     }
 
     private void renderDrawingList(Canvas canvas, List<IDrawing> drawingList, float minY, float maxY) {
-        for (int i = minVisibleIndex ; i < maxVisibleIndex ; i++) {
+        for (int i = minVisibleIndex; i < maxVisibleIndex; i++) {
             for (IDrawing drawing : drawingList) {
                 drawing.computePoint(minVisibleIndex, maxVisibleIndex, i);
             }
@@ -346,11 +322,11 @@ public class KLineRender extends AbstractRender {
             currentVisibleCount = sizeColor.getPortraitDefaultVisibleCount();
             portraitVisibleCountBuffer[zoomOutTimes] = currentVisibleCount;
 
-            for (int i = zoomInTimes ; i > 0 ; i--) {
+            for (int i = zoomInTimes; i > 0; i--) {
                 portraitVisibleCountBuffer[zoomOutTimes - i] = getZoomOutVisibleCount(currentVisibleCount, i);
             }
 
-            for (int i = zoomOutTimes ; i > 0 ; i--) {
+            for (int i = zoomOutTimes; i > 0; i--) {
                 portraitVisibleCountBuffer[zoomOutTimes + i] = getZoomInVisibleCount(currentVisibleCount, i);
             }
         }
@@ -361,7 +337,7 @@ public class KLineRender extends AbstractRender {
                 landscapeVisibleCountBuffer = new int[maxZoomTimes];
             }
 
-            for (int i = 0 ; i <= zoomOutTimes + zoomInTimes ; i++) {
+            for (int i = 0; i <= zoomOutTimes + zoomInTimes; i++) {
                 landscapeVisibleCountBuffer[i] = (int) (portraitVisibleCountBuffer[i] * LANDSCAPE_PORTRAIT_FACTOR);
             }
 
