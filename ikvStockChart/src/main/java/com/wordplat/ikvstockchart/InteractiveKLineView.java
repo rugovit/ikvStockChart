@@ -264,9 +264,6 @@ public class InteractiveKLineView extends View {
 
     private void highlight(float x, float y) {
         render.onHighlight(x, y);
-        for (AbstractRender tempRender : independedRender) {
-            tempRender.onHighlight(x, y);
-        }
         invalidate();
 
         int highlightIndex = render.getEntrySet().getHighlightIndex();
@@ -282,9 +279,6 @@ public class InteractiveKLineView extends View {
 
     private void cancelHighlight() {
         render.onCancelHighlight();
-        for (AbstractRender tempRender : independedRender) {
-            tempRender.onCancelHighlight();
-        }
         invalidate();
 
         if (kLineHandler != null) {
